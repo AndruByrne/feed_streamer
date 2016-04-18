@@ -1,17 +1,11 @@
 package com.satfeed.model;
 
-import android.app.Activity;
 import android.databinding.BindingAdapter;
 import android.databinding.DataBindingUtil;
-import android.databinding.ObservableField;
 import android.databinding.ViewDataBinding;
-import android.test.mock.MockApplication;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
-
-import com.satfeed.FeedStreamerApplication;
-import com.satfeed.R;
 
 /*
  * Created by Andrew Brin on 4/17/2016.

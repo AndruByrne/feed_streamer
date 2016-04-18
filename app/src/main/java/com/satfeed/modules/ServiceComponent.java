@@ -1,7 +1,6 @@
 package com.satfeed.modules;
 
 import android.databinding.ObservableField;
-import android.widget.PopupWindow;
 
 import com.satfeed.activity.LoginAndStreamActivity;
 

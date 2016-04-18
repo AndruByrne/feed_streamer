@@ -5,15 +5,12 @@ import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
 import android.os.Bundle;
 
+import com.satfeed.BR;
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
-import com.satfeed.BR;
 
 import org.videolan.libvlc.IVLCVout;
 import org.videolan.libvlc.LibVLC;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 
 public class LoginAndStreamActivity extends Activity implements IVLCVout.Callback, LibVLC.OnNativeCrashListener {
 
