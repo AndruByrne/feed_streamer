@@ -1,17 +1,17 @@
-package com.satfeed.model;
+package com.satfeed.activity;
 
 import android.databinding.BindingAdapter;
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.SurfaceView;
 import android.widget.EditText;
 
 /*
  * Created by Andrew Brin on 4/17/2016.
  */
-final public class DataBinding {
-
+final public class EditTextLooper {
     @BindingAdapter("bind_edit_text")
     public static void addTextChangedListener(EditText view, final int variable){
         final ViewDataBinding binding = DataBindingUtil.findBinding(view);

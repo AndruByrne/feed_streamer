@@ -3,70 +3,71 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
-        <import type="com.satfeed.activity.BindingVariables"/>
+
+        <import type="com.satfeed.activity.BindingVariables" />
+
         <variable
             name="touch_handlers"
-            type="com.satfeed.activity.TouchHandlers"/>
+            type="com.satfeed.activity.TouchHandlers" />
+
         <variable
             name="hailing_email"
-            type="String"/>
+            type="String" />
     </data>
 
     <LinearLayout
-        android:background="@color/purpley_gray"
-        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        >
+        android:background="@color/purpley_gray"
+        android:orientation="vertical">
 
         <RelativeLayout
-            android:layout_marginTop="5dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp">
 
             <TextView
-                android:layout_centerVertical="true"
-                android:layout_alignParentStart="true"
-                android:layout_marginStart="10dp"
+                android:id="@+id/email_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="10dp"
                 android:text="@string/email_label"
-                android:textColor="@color/pure_white"
-                android:id="@+id/email_label" />
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textColor="@color/pure_white" />
 
             <Button
-                android:layout_alignParentEnd="true"
+                android:id="@+id/go_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
                 android:background="@drawable/ok_button_background"
-                android:textColor="@color/pure_white"
-                android:text="@string/go_button_label"
                 android:onClick="@{hailing_email.length == 0 ? touch_handlers.onGoClickedNoEmail : touch_handlers.onGoClickedWithEmail}"
-                android:id="@+id/go_button" />
+                android:text="@string/go_button_label"
+                android:textColor="@color/pure_white" />
 
             <EditText
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@+id/email_label"
-                android:layout_toStartOf="@+id/go_button"
-                android:layout_marginStart="15dp"
-                android:layout_marginEnd="15dp"
+                android:id="@+id/user_email"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="@string/default_email"
-                app:bind_edit_text="@{BindingVariables.hailing_email}"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="15dp"
+                android:layout_marginStart="15dp"
+                android:layout_toEndOf="@+id/email_label"
+                android:layout_toStartOf="@+id/go_button"
                 android:background="@color/super_light_gray"
-                android:textAlignment="textStart"
                 android:inputType="textEmailAddress"
-                android:id="@+id/user_email"/>
+                android:text="@string/default_email"
+                android:textAlignment="textStart"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                app:bind_edit_text="@{BindingVariables.hailing_email}" />
 
         </RelativeLayout>
+
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-        </FrameLayout>
+            android:layout_height="match_parent"
+            android:id="@+id/video_frame"/>
     </LinearLayout>
-
 </layout>

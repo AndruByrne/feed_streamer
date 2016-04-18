@@ -1,10 +1,9 @@
 package com.satfeed.modules;
 
-import android.databinding.ObservableField;
+import android.databinding.DataBindingComponent;
 
-import com.satfeed.activity.LoginAndStreamActivity;
+import java.net.InetSocketAddress;
 
-import javax.inject.Named;
 import javax.inject.Singleton;
 
 import dagger.Component;
@@ -16,13 +15,10 @@ import dagger.Component;
 @Singleton
 @Component(modules = {
         AppModule.class,
-        EmailFieldModule.class,
-        LoginAndStreamModule.class,
+        EditTextModule.class,
+        SocketAddressModule.class,
+        StreamingSurfaceModule.class,
         ThreadingModule.class})
-
-public interface ServiceComponent {
-    void inject(LoginAndStreamActivity activity);
-
-    @Named("HailingEmail")
-    ObservableField<String> getHailingEmail();
+public interface ServiceComponent extends DataBindingComponent{
+        InetSocketAddress getServerAddress();
 }
