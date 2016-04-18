@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
+        <import type="com.satfeed.activity.BindingVariables"/>
         <variable
-            name="default_user"
-            type="java.lang.String"/>
+            name="touch_handlers"
+            type="com.satfeed.activity.TouchHandlers"/>
+        <variable
+            name="hailing_email"
+            type="String"/>
     </data>
 
     <LinearLayout
-        android:background="#837D84"
+        android:background="@color/purpley_gray"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -27,19 +32,20 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:text="@string/email_label"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/pure_white"
                 android:id="@+id/email_label" />
 
             <Button
                 android:layout_alignParentEnd="true"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#11DC44"
-                android:textColor="#FFFFFF"
+                android:background="@drawable/ok_button_background"
+                android:textColor="@color/pure_white"
                 android:text="@string/go_button_label"
+                android:onClick="@{hailing_email.length == 0 ? touch_handlers.onGoClickedNoEmail : touch_handlers.onGoClickedWithEmail}"
                 android:id="@+id/go_button" />
 
-            <TextView
+            <EditText
                 android:layout_centerVertical="true"
                 android:layout_toEndOf="@+id/email_label"
                 android:layout_toStartOf="@+id/go_button"
@@ -47,11 +53,13 @@
                 android:layout_marginEnd="15dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="@{default_user}"
-                android:background="#CECECE"
-                android:id="@+id/textView8"
-                android:textAlignment="textStart" />
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="@string/default_email"
+                app:bind_edit_text="@{BindingVariables.hailing_email}"
+                android:background="@color/super_light_gray"
+                android:textAlignment="textStart"
+                android:inputType="textEmailAddress"
+                android:id="@+id/user_email"/>
 
         </RelativeLayout>
         <FrameLayout

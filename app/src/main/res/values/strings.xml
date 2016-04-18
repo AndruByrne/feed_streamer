@@ -5,4 +5,5 @@
     <string name="park_phone_label">Park Phone:</string>
     <string name="email_label">Email:</string>
     <string name="go_button_label">GO</string>
+    <string name="no_email_toast">please enter an email</string>
 </resources>

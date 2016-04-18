@@ -2,15 +2,27 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.neenbedankt.android-apt'
 
 android {
-    compileSdkVersion 23
     buildToolsVersion "23.0.2"
+
+    buildTypes {
+        debug {
+            resValue "string", "default_email", "anthropic.android@gmail.com"
+        }
+        release {
+            resValue "string", "default_email", "anthropic.android@gmail.com"
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileSdkVersion 23
 
     dataBinding {
         enabled = true;
     }
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 17
         targetSdkVersion 21
         versionCode 2
         versionName "1.0.0-SNAPSHOT"
@@ -19,14 +31,14 @@ android {
     }
 
     packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
         exclude 'LICENSE.txt'
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
+        exclude 'META-INF/INDEX.LIST'
+        exclude 'META-INF/BenchmarkList'
+        exclude 'META-INF/io.netty.versions.properties'
+        exclude 'META-INF/CompilerHints'
     }
 }
 
@@ -47,7 +59,12 @@ dependencies {
     compile 'io.reactivex:rxjava:1.1.0'
 
     // rxNatty for tcp
-    compile 'io.reactivex:rxnetty-http:0.5.2-SNAPSHOT'
+    compile('io.reactivex:rxnetty-http:0.5.2-SNAPSHOT') {
+        exclude group: 'org.openjdk.jmh'
+    }
+
+    // libVLC for ffmpeg
+    compile "de.mrmaffen:vlc-android-sdk:1.9.0"
 
     // paper datastore
     compile 'io.paperdb:paperdb:1.1'
@@ -65,7 +82,7 @@ dependencies {
     testCompile 'org.robolectric:robolectric:3.0'
     testCompile "org.robolectric:shadows-play-services:3.0"
     testCompile "org.robolectric:shadows-support-v4:3.0"
-    // updated indirect dependency
+    // updated indirect dependency (for who?)
     testCompile 'org.ow2.asm:asm:5.0.3'
 
     // Mockito

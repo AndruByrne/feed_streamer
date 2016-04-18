@@ -5,22 +5,21 @@ import android.app.Application;
 import com.satfeed.modules.AppModule;
 import com.satfeed.modules.DaggerServiceComponent;
 import com.satfeed.modules.LoginAndStreamModule;
-import com.satfeed.modules.PopupModule;
 import com.satfeed.modules.ServiceComponent;
 import com.satfeed.modules.ThreadingModule;
 
 
 public class FeedStreamerApplication extends Application {
-    public static String SF_CITY_API_BASE_URL = "https://data.sfgov.org/resource/";
+    public static String ALIEN_SERVER = "https://data.sfgov.org/resource/";
     private ServiceComponent serviceComponent;
+    public static String TAG = FeedStreamerApplication.class.getSimpleName();
 
     @Override
     public void onCreate() {
         super.onCreate();
         serviceComponent = DaggerServiceComponent.builder()
                 .appModule(new AppModule(this))
-                .loginAndStreamModule(getLoginAndStreamModule(SF_CITY_API_BASE_URL))
-                .popupModule(new PopupModule())
+                .loginAndStreamModule(getLoginAndStreamModule(ALIEN_SERVER))
                 .threadingModule(getThreadingModule())
                 .build();
     }

@@ -37,7 +37,7 @@ public class LoginAndStreamActivityTest {
         // assert identification code
         assertTrue(Paper.book().getAllKeys().size() == 6);
         assertTrue(Paper.book().getAllKeys() == Arrays.asList(new Integer[]{0, 1, 2, 3, 4, 5}));
-        
+
     }
 
     @After

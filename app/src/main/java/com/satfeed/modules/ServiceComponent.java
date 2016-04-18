@@ -1,9 +1,11 @@
 package com.satfeed.modules;
 
+import android.databinding.ObservableField;
 import android.widget.PopupWindow;
 
 import com.satfeed.activity.LoginAndStreamActivity;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import dagger.Component;
@@ -15,12 +17,13 @@ import dagger.Component;
 @Singleton
 @Component(modules = {
         AppModule.class,
+        EmailFieldModule.class,
         LoginAndStreamModule.class,
-        PopupModule.class,
         ThreadingModule.class})
 
 public interface ServiceComponent {
     void inject(LoginAndStreamActivity activity);
 
-    PopupWindow popupWindow();
+    @Named("HailingEmail")
+    ObservableField<String> getHailingEmail();
 }

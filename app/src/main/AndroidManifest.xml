@@ -4,14 +4,13 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:title="Satellite Scope"
         android:name=".FeedStreamerApplication">
         <activity
             android:name=".activity.LoginAndStreamActivity"
-            android:label="Parks in San Francisco"
+            android:label="Alien data feed"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
