@@ -12,7 +12,6 @@ import android.util.Log;
 
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
-import com.satfeed.modules.ServiceComponent;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -27,7 +26,6 @@ import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func0;
 import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 public class StreamingClient {
 
@@ -78,14 +76,13 @@ public class StreamingClient {
                                                         .map(new Func1<Void, Object>() {
                                                             @Override
                                                             public Object call(Void aVoid) {
-                                                                Log.d(FeedStreamerApplication.TAG, "second obs complete, in map");
                                                                 return "";
                                                             }
                                                         });
+                                                Log.d(FeedStreamerApplication.TAG, "second obs complete, in map, returning id code"+identificationCode);
                                                 return identificationCode;
                                             }
                                         });
-
                                 // second action is to receive the success or failure metric
                                 Observable<String> successMessage = connection
                                         .getInput()
@@ -93,7 +90,7 @@ public class StreamingClient {
                                         .map(new Func1<Object, String>() {
                                             @Override
                                             public String call(Object o) {
-                                                Log.d(FeedStreamerApplication.TAG, "converting string in second obs");
+                                                Log.d(FeedStreamerApplication.TAG, "converting string in third obs");
                                                 return o.toString();
                                             }
                                         });

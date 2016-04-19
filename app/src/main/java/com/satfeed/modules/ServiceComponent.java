@@ -2,8 +2,6 @@ package com.satfeed.modules;
 
 import android.databinding.DataBindingComponent;
 
-import java.net.InetSocketAddress;
-
 import javax.inject.Singleton;
 
 import dagger.Component;
