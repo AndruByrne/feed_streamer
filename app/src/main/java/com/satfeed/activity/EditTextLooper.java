@@ -5,7 +5,6 @@ import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.SurfaceView;
 import android.widget.EditText;
 
 /*

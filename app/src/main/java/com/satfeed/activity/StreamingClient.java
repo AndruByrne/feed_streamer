@@ -4,28 +4,18 @@ package com.satfeed.activity;
  * Created by Andrew Brin on 4/18/2016.
  */
 
-import android.app.Activity;
+import android.app.Application;
 import android.content.res.Resources;
+import android.media.AudioTrack;
 import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 import com.satfeed.modules.ServiceComponent;
 
-import org.videolan.libvlc.IVLCVout;
-import org.videolan.libvlc.Media;
-import org.videolan.libvlc.MediaPlayer;
-//import org.videolan.libvlc.
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.logging.LogLevel;
-import io.paperdb.Paper;
 import io.reactivex.netty.channel.Connection;
-import io.reactivex.netty.channel.ContentSource;
 import io.reactivex.netty.protocol.tcp.client.TcpClient;
 import io.reactivex.netty.util.StringLineDecoder;
 import rx.Observable;
@@ -37,19 +27,18 @@ import rx.schedulers.Schedulers;
 
 public class StreamingClient{
 
-    public Observable<String> streamToSurface(final SurfaceView view, final String hailing_email) {
+    private final ServiceComponent serviceComponent;
+    private Application application;
 
+    public StreamingClient(Application application) {
+        this.application = application;
+        serviceComponent = ((FeedStreamerApplication) application).getServiceComponent();
+    }
+
+    public Observable<String> streamToTrack(final String hailing_email, final AudioTrack audioTrack) {
         Log.d(FeedStreamerApplication.TAG, "surface stream starting");
-        Log.d(FeedStreamerApplication.TAG, "surfaceView not null? : " + Boolean.toString(view != null));
-        final ServiceComponent serviceComponent = getServiceComponent(view);
-        final MediaPlayer mediaPlayer = serviceComponent.getMediaPlayer();
-        final IVLCVout vout = serviceComponent.getVOut();
-        vout.setVideoView(view);
-        vout.attachViews();
-//        new Media() a(serviceComponent.getVLC(), 0);
-        final SurfaceHolder holder = view.getHolder();
-
         return Observable.create(new Observable.OnSubscribe<String>() {
+
             private String challenge_number;
 
             @Override
@@ -57,7 +46,6 @@ public class StreamingClient{
                 Log.d(FeedStreamerApplication.TAG, "surface stream started");
                 TcpClient
                         .<ByteBuf, ByteBuf>newClient(serviceComponent.getServerAddress())
-                        .enableWireLogging(LogLevel.DEBUG)
                         .addChannelHandlerLast("string_decoder", new Func0<ChannelHandler>() {
                             @Override
                             public ChannelHandler call() {
@@ -157,7 +145,6 @@ public class StreamingClient{
                     @Override
                     public void call(Connection<Object, Object> connection) {
                         Log.d(FeedStreamerApplication.TAG, "about to stream!");
-
                     }
                 })
                         .flatMap(new Func1<Connection<Object, Object>, Observable<?>>() {
@@ -186,7 +173,7 @@ public class StreamingClient{
             }
 
             private Observable<String> getIdPacket() {
-                final Resources resources = getResources(view);
+                final Resources resources = getResources();
                 return Observable.just(
                         resources.getString(R.string.idpacket_part1) +
                                 challenge_number +
@@ -198,12 +185,7 @@ public class StreamingClient{
                 .subscribeOn(Schedulers.newThread());
     }
 
-    private Resources getResources(SurfaceView view) {
-        return ((Activity) view.getContext()).getResources();
-    }
-
-    private static ServiceComponent getServiceComponent(SurfaceView view) {
-        return ((FeedStreamerApplication) ((Activity) view.getContext()).getApplication())
-                .getServiceComponent();
+    private Resources getResources() {
+        return application.getResources();
     }
 }

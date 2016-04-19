@@ -1,8 +1,10 @@
 package com.satfeed.activity;
 
 import android.databinding.BindingAdapter;
+import android.media.AudioTrack;
+import android.support.annotation.NonNull;
 import android.util.Log;
-import android.view.SurfaceView;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.satfeed.FeedStreamerApplication;
@@ -14,23 +16,21 @@ import rx.functions.Action1;
 /*
  * Created by Andrew Brin on 4/18/2016.
  */
-public class StreamingSurfacePopulator {
+public class StreamingAudioPopulator {
 
     private final StreamingClient streamingClient;
+    private AudioTrack audioTrack;
 
-    public StreamingSurfacePopulator(StreamingClient streamingClient) { this.streamingClient = streamingClient; }
+    public StreamingAudioPopulator(StreamingClient streamingClient, AudioTrack audioTrack) {
+        this.streamingClient = streamingClient;
+        this.audioTrack = audioTrack;
+    }
 
     @BindingAdapter("login_and_stream")
-    public void loginAndStream(final SurfaceView view, final String hailing_email){
-//        getting error from network on UI when I stream to surface from here, which is odd, given
-//        these binding adapters are advertised as off-thread; so now using an observable.
-        Log.d(FeedStreamerApplication.TAG, "surface view is not null? : "+Boolean.toString(view!=null));
-        Log.d(FeedStreamerApplication.TAG, "streaming client is not null? : "+Boolean.toString(streamingClient!=null));
-        Log.d(FeedStreamerApplication.TAG, "view context is not null? : "+Boolean.toString(view.getContext()!=null));
-
+    public void loginAndStream(@NonNull final SeekBar view, final String hailing_email){
         streamingClient
-                .streamToSurface(view, hailing_email)
-                .subscribeOn(AndroidSchedulers.mainThread())
+                .streamToTrack(hailing_email, audioTrack)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<String>() {
                     @Override
                     public void call(String success) {

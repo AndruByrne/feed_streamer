@@ -5,10 +5,9 @@ import android.app.Application;
 import com.satfeed.modules.AppModule;
 import com.satfeed.modules.DaggerServiceComponent;
 import com.satfeed.modules.EditTextModule;
-import com.satfeed.modules.LibVLCModule;
 import com.satfeed.modules.ServiceComponent;
 import com.satfeed.modules.SocketAddressModule;
-import com.satfeed.modules.StreamingSurfaceModule;
+import com.satfeed.modules.StreamingAudioModule;
 import com.satfeed.modules.ThreadingModule;
 
 
@@ -24,9 +23,8 @@ public class FeedStreamerApplication extends Application {
         serviceComponent = DaggerServiceComponent.builder()
                 .appModule(new AppModule(this))
                 .editTextModule(new EditTextModule())
-                .libVLCModule(new LibVLCModule())
                 .socketAddressModule(getSocketAddressModule())
-                .streamingSurfaceModule(new StreamingSurfaceModule())
+                .streamingAudioModule(new StreamingAudioModule())
                 .threadingModule(getThreadingModule())
                 .build();
     }

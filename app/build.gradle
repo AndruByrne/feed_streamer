@@ -22,8 +22,8 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 17
-        targetSdkVersion 21
+        minSdkVersion 23
+        targetSdkVersion 23
         versionCode 2
         versionName "1.0.0-SNAPSHOT"
         applicationId "com.satfeed"
@@ -62,9 +62,6 @@ dependencies {
     compile('io.reactivex:rxnetty-http:0.5.2-SNAPSHOT') {
         exclude group: 'org.openjdk.jmh'
     }
-
-    // libVLC for ffmpeg
-    compile "de.mrmaffen:vlc-android-sdk:1.9.0"
 
     // paper datastore
     compile 'io.paperdb:paperdb:1.1'

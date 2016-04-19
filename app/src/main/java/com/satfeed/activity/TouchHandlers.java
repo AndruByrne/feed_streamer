@@ -2,16 +2,12 @@ package com.satfeed.activity;
 
 import android.app.Activity;
 import android.databinding.DataBindingUtil;
-import android.opengl.GLSurfaceView;
-import android.test.mock.MockApplication;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
 
-import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 import com.satfeed.databinding.LoginAndStreamActivityBinding;
-import com.satfeed.databinding.StreamingSurfaceBinding;
+import com.satfeed.databinding.StreamingAudioBinding;
 
 /*
  * Created by Andrew Brin on 4/6/2016.
@@ -26,12 +22,12 @@ public class TouchHandlers {
     public void onGoClickedWithEmail(View view){
         final LoginAndStreamActivityBinding dataBinding = DataBindingUtil.findBinding(view);
         final String hailingEmail = dataBinding.getHailingEmail();
-        final StreamingSurfaceBinding surfaceBinding = StreamingSurfaceBinding.inflate(
+        final StreamingAudioBinding audioBinding = StreamingAudioBinding.inflate(
                 ((Activity) view.getContext()).getLayoutInflater(),
                 dataBinding.videoFrame,
                 false);
-        surfaceBinding.setVariable(BindingVariables.hailing_email, hailingEmail);
-        dataBinding.videoFrame.addView(surfaceBinding.surfaceView);
+        audioBinding.setVariable(BindingVariables.hailing_email, hailingEmail);
+        dataBinding.videoFrame.addView(audioBinding.seekingBar);
     }
 
     public void onGoClickedNoEmail(View view){
