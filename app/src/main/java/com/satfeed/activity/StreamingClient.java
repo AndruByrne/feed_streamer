@@ -25,7 +25,7 @@ import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-public class StreamingClient{
+public class StreamingClient {
 
     private final ServiceComponent serviceComponent;
     private Application application;
@@ -36,14 +36,12 @@ public class StreamingClient{
     }
 
     public Observable<String> streamToTrack(final String hailing_email, final AudioTrack audioTrack) {
-        Log.d(FeedStreamerApplication.TAG, "surface stream starting");
         return Observable.create(new Observable.OnSubscribe<String>() {
 
             private String challenge_number;
 
             @Override
             public void call(final Subscriber<? super String> subscriber) {
-                Log.d(FeedStreamerApplication.TAG, "surface stream started");
                 TcpClient
                         .<ByteBuf, ByteBuf>newClient(serviceComponent.getServerAddress())
                         .addChannelHandlerLast("string_decoder", new Func0<ChannelHandler>() {
@@ -57,59 +55,64 @@ public class StreamingClient{
                         .concatMap(new Func1<Connection<Object, Object>, Observable<Connection<Object, Object>>>() {
                             @Override
                             public Observable<Connection<Object, Object>> call(final Connection<Object, Object> connection) {
-                                return connection
-                                        .getInput()
-                                        .take(1)
-                                        .map(new Func1<Object, String>() {
-                                            @Override
-                                            public String call(Object o) {
-                                                return o.toString();
-                                            }
-                                        })
-                                        .doOnNext(new Action1<String>() {
-                                            @Override
-                                            public void call(String s) {
-                                                subscriber.onNext(s);
-                                                // datastore;
-                                            }
-                                        })
-                                        .map(new Func1<String, String>() {
-                                            @Override
-                                            public String call(String s) {
-                                                return s.substring(6);
-                                            }
-                                        })
-                                        .doOnNext(new Action1<String>() {
-                                            @Override
-                                            public void call(String s) {
-                                                challenge_number = s;
-                                            }
-                                        })
-                                        .map(new Func1<String, Connection<Object, Object>>() {
-                                            @Override
-                                            public Connection<Object, Object> call(String s) {
-                                                return connection;
-                                            }
-                                        });
+                                try {
+                                    connection
+                                            .getInput()
+                                            .take(1)
+                                            .map(new Func1<Object, String>() {
+                                                @Override
+                                                public String call(Object o) {
+                                                    return o.toString();
+                                                }
+                                            })
+                                            .doOnNext(new Action1<String>() {
+                                                @Override
+                                                public void call(String s) {
+                                                    subscriber.onNext(s);
+                                                    // datastore;
+                                                }
+                                            })
+                                            .map(new Func1<String, String>() {
+                                                @Override
+                                                public String call(String s) {
+                                                    return s.substring(6);
+                                                }
+                                            })
+                                            .doOnNext(new Action1<String>() {
+                                                @Override
+                                                public void call(String s) {
+                                                    challenge_number = s;
+                                                }
+                                            })
+                                            .map(new Func1<String, Connection<Object, Object>>() {
+                                                @Override
+                                                public Connection<Object, Object> call(String s) {
+                                                    return connection;
+                                                }
+                                            }).toBlocking();
+                                } catch (Exception e) {
+                                    subscriber.onError(e);
+//                                    e.printStackTrace();
+                                }
+                                return Observable.just(connection);
                             }
-                        }).doOnNext(new Action1<Connection<Object, Object>>() {
-                    @Override
-                    public void call(Connection<Object, Object> connection) {
-                        Log.d(FeedStreamerApplication.TAG, "amazingly, we got past the first connection on the first try");
-                    }
-                })
-                                // respond with populated id packet
+                        })// respond with populated id packet
                         .concatMap(new Func1<Connection<Object, Object>, Observable<Connection<Object, Object>>>() {
                             @Override
                             public Observable<Connection<Object, Object>> call(final Connection<Object, Object> connection) {
-                                return connection
-                                        .writeString(getIdPacket())
-                                        .map(new Func1<Void, Connection<Object, Object>>() {
-                                            @Override
-                                            public Connection<Object, Object> call(Void aVoid) {
-                                                return connection;
-                                            }
-                                        });
+                                return Observable.create(new Observable.OnSubscribe<Connection<Object, Object>>() {
+                                    @Override
+                                    public void call(Subscriber<? super Connection<Object, Object>> subscriber) {
+                                        try {
+                                            connection.writeString(getIdPacket());
+                                        } catch (Exception e) {
+                                            subscriber.onError(e);
+                                        } finally {
+                                            subscriber.onNext(connection);
+                                        }
+                                    }
+                                });
+
                             }
                         }).doOnNext(new Action1<Connection<Object, Object>>() {
                     @Override
@@ -120,26 +123,28 @@ public class StreamingClient{
                         .concatMap(new Func1<Connection<Object, Object>, Observable<Connection<Object, Object>>>() {
                             @Override
                             public Observable<Connection<Object, Object>> call(final Connection<Object, Object> connection) {
-                                return connection
-                                        .getInput()
-                                        .take(1)
-                                        .map(new Func1<Object, String>() {
-                                            @Override
-                                            public String call(Object o) {
-                                                return o.toString();
-                                            }
-                                        })
-                                        .doOnNext(new Action1<String>() {
-                                            @Override
-                                            public void call(String s) {
-                                                subscriber.onNext(s);
-                                            }
-                                        }).map(new Func1<String, Connection<Object, Object>>() {
-                                            @Override
-                                            public Connection<Object, Object> call(String s) {
-                                                return connection;
-                                            }
-                                        });
+                                try {
+                                    connection
+                                            .getInput()
+                                            .take(1)
+                                            .map(new Func1<Object, String>() {
+                                                @Override
+                                                public String call(Object o) {
+                                                    Log.d(FeedStreamerApplication.TAG, "got a string");
+                                                    return o.toString();
+                                                }
+                                            })
+                                            .doOnNext(new Action1<String>() {
+                                                @Override
+                                                public void call(String s) {
+                                                    Log.d(FeedStreamerApplication.TAG, "sneding onnext");
+                                                    subscriber.onNext(s);
+                                                }
+                                            }).toBlocking();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                } return Observable.just(connection);
+
                             }
                         }).doOnNext(new Action1<Connection<Object, Object>>() {
                     @Override
@@ -155,7 +160,6 @@ public class StreamingClient{
                                     public void call(Subscriber<? super Object> subscriber) {
                                         for (int i = 0; i < 10; i++) {
                                             connection.getInput();
-                                            subscriber.onNext(true);
                                         }
                                     }
                                 });
@@ -180,7 +184,8 @@ public class StreamingClient{
                                 resources.getString(R.string.idpacket_part2) +
                                 hailing_email +
                                 resources.getString(R.string.idpacket_part3));
-            }})
+            }
+        })
                 .take(3)
                 .subscribeOn(Schedulers.newThread());
     }

@@ -35,12 +35,14 @@ public class StreamingAudioPopulator {
                     @Override
                     public void call(String success) {
                         Toast.makeText(view.getContext(), "Stream: " + success, Toast.LENGTH_SHORT).show();
+                        Log.d(FeedStreamerApplication.TAG, "onNext: " + success);
                     }
                 }, new Action1<Throwable>() {
                     @Override
                     public void call(Throwable throwable) {
                         Log.e(FeedStreamerApplication.TAG, ": error in observable: " + throwable.getMessage());
                         Toast.makeText(view.getContext(), "Having trouble streaming video right now", Toast.LENGTH_LONG).show();
+                        throwable.printStackTrace();
                     }
                 }, new Action0() {
                     @Override
