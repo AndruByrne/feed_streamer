@@ -21,6 +21,6 @@ import dagger.Component;
         ThreadingModule.class})
 public interface ServiceComponent extends DataBindingComponent {
 
-    InetSocketAddress getServerAddress();
+//    InetSocketAddress getServerAddress();
 
 }

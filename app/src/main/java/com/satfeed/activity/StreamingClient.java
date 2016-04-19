@@ -7,11 +7,15 @@ package com.satfeed.activity;
 import android.app.Application;
 import android.content.res.Resources;
 import android.media.AudioTrack;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 import com.satfeed.modules.ServiceComponent;
+
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
@@ -27,23 +31,22 @@ import rx.schedulers.Schedulers;
 
 public class StreamingClient {
 
-    private final ServiceComponent serviceComponent;
+    //    private final ServiceComponent serviceComponent;
     private Application application;
 
     public StreamingClient(Application application) {
         this.application = application;
-        serviceComponent = ((FeedStreamerApplication) application).getServiceComponent();
+//        serviceComponent = ((FeedStreamerApplication) application).getServiceComponent();
     }
 
     public Observable<String> streamToTrack(final String hailing_email, final AudioTrack audioTrack) {
         return Observable.create(new Observable.OnSubscribe<String>() {
-
-            private String challenge_number;
-
             @Override
             public void call(final Subscriber<? super String> subscriber) {
                 TcpClient
-                        .<ByteBuf, ByteBuf>newClient(serviceComponent.getServerAddress())
+                        .<ByteBuf, ByteBuf>newClient(new InetSocketAddress(
+                                FeedStreamerApplication.ALIEN_SERVER,
+                                Integer.parseInt(FeedStreamerApplication.STREAMING_PORT)))
                         .addChannelHandlerLast("string_decoder", new Func0<ChannelHandler>() {
                             @Override
                             public ChannelHandler call() {
@@ -51,143 +54,92 @@ public class StreamingClient {
                             }
                         })
                         .createConnectionRequest()
-                                // get identification number from connection
-                        .concatMap(new Func1<Connection<Object, Object>, Observable<Connection<Object, Object>>>() {
+                        .flatMap(new Func1<Connection<Object, Object>, Observable<String>>() {
                             @Override
-                            public Observable<Connection<Object, Object>> call(final Connection<Object, Object> connection) {
-                                try {
-                                    connection
-                                            .getInput()
-                                            .take(1)
-                                            .map(new Func1<Object, String>() {
-                                                @Override
-                                                public String call(Object o) {
-                                                    return o.toString();
-                                                }
-                                            })
-                                            .doOnNext(new Action1<String>() {
-                                                @Override
-                                                public void call(String s) {
-                                                    subscriber.onNext(s);
-                                                    // datastore;
-                                                }
-                                            })
-                                            .map(new Func1<String, String>() {
-                                                @Override
-                                                public String call(String s) {
-                                                    return s.substring(6);
-                                                }
-                                            })
-                                            .doOnNext(new Action1<String>() {
-                                                @Override
-                                                public void call(String s) {
-                                                    challenge_number = s;
-                                                }
-                                            })
-                                            .map(new Func1<String, Connection<Object, Object>>() {
-                                                @Override
-                                                public Connection<Object, Object> call(String s) {
-                                                    return connection;
-                                                }
-                                            }).toBlocking();
-                                } catch (Exception e) {
-                                    subscriber.onError(e);
-//                                    e.printStackTrace();
-                                }
-                                return Observable.just(connection);
-                            }
-                        })// respond with populated id packet
-                        .concatMap(new Func1<Connection<Object, Object>, Observable<Connection<Object, Object>>>() {
-                            @Override
-                            public Observable<Connection<Object, Object>> call(final Connection<Object, Object> connection) {
-                                return Observable.create(new Observable.OnSubscribe<Connection<Object, Object>>() {
-                                    @Override
-                                    public void call(Subscriber<? super Connection<Object, Object>> subscriber) {
-                                        try {
-                                            connection.writeString(getIdPacket());
-                                        } catch (Exception e) {
-                                            subscriber.onError(e);
-                                        } finally {
-                                            subscriber.onNext(connection);
-                                        }
-                                    }
-                                });
+                            public Observable<String> call(final Connection<Object, Object> connection) {
 
-                            }
-                        }).doOnNext(new Action1<Connection<Object, Object>>() {
-                    @Override
-                    public void call(Connection<Object, Object> connection) {
-                        Log.d(FeedStreamerApplication.TAG, "sent response");
-                    }
-                })
-                        .concatMap(new Func1<Connection<Object, Object>, Observable<Connection<Object, Object>>>() {
-                            @Override
-                            public Observable<Connection<Object, Object>> call(final Connection<Object, Object> connection) {
-                                try {
-                                    connection
-                                            .getInput()
-                                            .take(1)
-                                            .map(new Func1<Object, String>() {
-                                                @Override
-                                                public String call(Object o) {
-                                                    Log.d(FeedStreamerApplication.TAG, "got a string");
-                                                    return o.toString();
-                                                }
-                                            })
-                                            .doOnNext(new Action1<String>() {
-                                                @Override
-                                                public void call(String s) {
-                                                    Log.d(FeedStreamerApplication.TAG, "sneding onnext");
-                                                    subscriber.onNext(s);
-                                                }
-                                            }).toBlocking();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                } return Observable.just(connection);
+                                // first action is to receive the identification code
+                                // and repond with idPacket
+                                Observable<String> idCodeAndLogin = connection
+                                        .getInput()
+                                        .take(1)
+                                        .map(new Func1<Object, String>() {
+                                            @Override // remove first 6 characters i.e. no WHORU:
+                                            public String call(Object o) {
+                                                return o.toString().substring(6);
+                                            }
+                                        })
+                                        .map(new Func1<String, String>() {
+                                            @Override
+                                            public String call(String identificationCode) {
+                                                final Observable<String> s = getIdPacket(identificationCode, hailing_email);
+                                                connection
+                                                        .writeString(s)
+                                                        .map(new Func1<Void, Object>() {
+                                                            @Override
+                                                            public Object call(Void aVoid) {
+                                                                Log.d(FeedStreamerApplication.TAG, "second obs complete, in map");
+                                                                return "";
+                                                            }
+                                                        });
+                                                return identificationCode;
+                                            }
+                                        });
 
-                            }
-                        }).doOnNext(new Action1<Connection<Object, Object>>() {
-                    @Override
-                    public void call(Connection<Object, Object> connection) {
-                        Log.d(FeedStreamerApplication.TAG, "about to stream!");
-                    }
-                })
-                        .flatMap(new Func1<Connection<Object, Object>, Observable<?>>() {
-                            @Override
-                            public Observable<?> call(final Connection<Object, Object> connection) {
-                                return Observable.create(new Observable.OnSubscribe<Object>() {
-                                    @Override
-                                    public void call(Subscriber<? super Object> subscriber) {
-                                        for (int i = 0; i < 10; i++) {
-                                            connection.getInput();
-                                        }
-                                    }
-                                });
+                                // second action is to receive the success or failure metric
+                                Observable<String> successMessage = connection
+                                        .getInput()
+                                        .take(1)
+                                        .map(new Func1<Object, String>() {
+                                            @Override
+                                            public String call(Object o) {
+                                                Log.d(FeedStreamerApplication.TAG, "converting string in second obs");
+                                                return o.toString();
+                                            }
+                                        });
+
+                                //third action is to receive the stream
+                                Observable<String> attachAudioToStream = connection
+                                        .getInput()
+                                        .take(4)
+                                        .map(new Func1<Object, String>() {
+                                            @Override
+                                            public String call(Object o) {
+                                                Log.d(FeedStreamerApplication.TAG, "we might be streaming");
+                                                final int write = audioTrack.write(((ByteBuffer) o), 192, AudioTrack.WRITE_BLOCKING);
+                                                if (write < 40 && (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING))
+                                                    audioTrack.play();
+                                                return "Streaming";
+                                            }
+                                        });
+
+                                return Observable
+                                        .concat(idCodeAndLogin, successMessage, attachAudioToStream);
                             }
                         })
-                        .take(10)
                         .toBlocking()
-                        .forEach(new Action1<Object>() {
+                        .forEach(new Action1<String>() {
                             @Override
-                            public void call(Object o) {
-                                subscriber.onNext("Completed Stream!");
+                            public void call(String s) {
+                                subscriber.onNext(s);
+                                subscriber.onCompleted();
                             }
                         });
-                subscriber.onCompleted();
             }
+        });
 
-            private Observable<String> getIdPacket() {
-                final Resources resources = getResources();
-                return Observable.just(
-                        resources.getString(R.string.idpacket_part1) +
-                                challenge_number +
-                                resources.getString(R.string.idpacket_part2) +
-                                hailing_email +
-                                resources.getString(R.string.idpacket_part3));
-            }
-        })
-                .take(3)
-                .subscribeOn(Schedulers.newThread());
+    }
+
+    @NonNull
+    private Observable<String> getIdPacket(String identificationCode, String hailing_email) {
+        final Resources resources = getResources();
+        final String s = resources.getString(R.string.idpacket_part1) +
+                identificationCode +
+                resources.getString(R.string.idpacket_part2) +
+                hailing_email +
+                resources.getString(R.string.idpacket_part3);
+        Log.d(FeedStreamerApplication.TAG, "made id: "+s);
+        return Observable.just(s);
     }
 
     private Resources getResources() {

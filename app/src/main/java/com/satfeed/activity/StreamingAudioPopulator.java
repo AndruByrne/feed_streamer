@@ -12,6 +12,7 @@ import com.satfeed.FeedStreamerApplication;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 /*
  * Created by Andrew Brin on 4/18/2016.
@@ -30,26 +31,27 @@ public class StreamingAudioPopulator {
     public void loginAndStream(@NonNull final SeekBar view, final String hailing_email){
         streamingClient
                 .streamToTrack(hailing_email, audioTrack)
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<String>() {
-                    @Override
-                    public void call(String success) {
-                        Toast.makeText(view.getContext(), "Stream: " + success, Toast.LENGTH_SHORT).show();
-                        Log.d(FeedStreamerApplication.TAG, "onNext: " + success);
-                    }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        Log.e(FeedStreamerApplication.TAG, ": error in observable: " + throwable.getMessage());
-                        Toast.makeText(view.getContext(), "Having trouble streaming video right now", Toast.LENGTH_LONG).show();
-                        throwable.printStackTrace();
-                    }
-                }, new Action0() {
-                    @Override
-                    public void call() {
-                        // probably need to do clean up here
-                        Log.i(FeedStreamerApplication.TAG, ": stream has ended");
-                    }
-                });
+        .subscribe(new Action1<String>() {
+            @Override
+            public void call(String success) {
+                Toast.makeText(view.getContext(), "Stream: " + success, Toast.LENGTH_SHORT).show();
+                Log.d(FeedStreamerApplication.TAG, "onNext: " + success);
+            }
+        }, new Action1<Throwable>() {
+            @Override
+            public void call(Throwable throwable) {
+                Log.e(FeedStreamerApplication.TAG, ": error in observable: " + throwable.getMessage());
+                Toast.makeText(view.getContext(), "Having trouble streaming video right now", Toast.LENGTH_LONG).show();
+                throwable.printStackTrace();
+            }
+        }, new Action0() {
+            @Override
+            public void call() {
+                // probably need to do clean up here
+                Log.i(FeedStreamerApplication.TAG, ": stream has ended");
+            }
+        });
     }
 }

@@ -22,8 +22,9 @@ public class SocketAddressModule {
 
     @Provides
     InetSocketAddress getServerAddress() {
-        return new InetSocketAddress(
-                alienServer,
-                Integer.parseInt(streamingPort));
+        return null;
+//        return new InetSocketAddress(
+//                alienServer,
+//                Integer.parseInt(streamingPort));
     }
 }
