@@ -9,14 +9,24 @@ import com.satfeed.activity.StreamingSurfacePopulator;
 
 import java.net.InetSocketAddress;
 
+import javax.inject.Singleton;
+
 import dagger.Module;
 import dagger.Provides;
 
 @Module
 public class StreamingSurfaceModule {
 
+
     @Provides
-    StreamingSurfacePopulator getSurfacePopulator() {
-        return new StreamingSurfacePopulator(new StreamingClient());
+    @Singleton
+    StreamingSurfacePopulator getSurfacePopulator(StreamingClient streamingClient) {
+        return new StreamingSurfacePopulator(streamingClient);
+    }
+
+    @Provides
+    @Singleton
+    StreamingClient getStreamingClient(){
+        return new StreamingClient();
     }
 }

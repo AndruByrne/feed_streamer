@@ -1,18 +1,15 @@
 package com.satfeed;
 
 import android.app.Application;
-import android.support.annotation.NonNull;
 
 import com.satfeed.modules.AppModule;
 import com.satfeed.modules.DaggerServiceComponent;
 import com.satfeed.modules.EditTextModule;
-import com.satfeed.modules.LoginAndStreamModule;
+import com.satfeed.modules.LibVLCModule;
 import com.satfeed.modules.ServiceComponent;
 import com.satfeed.modules.SocketAddressModule;
 import com.satfeed.modules.StreamingSurfaceModule;
 import com.satfeed.modules.ThreadingModule;
-
-import java.net.SocketAddress;
 
 
 public class FeedStreamerApplication extends Application {
@@ -27,8 +24,9 @@ public class FeedStreamerApplication extends Application {
         serviceComponent = DaggerServiceComponent.builder()
                 .appModule(new AppModule(this))
                 .editTextModule(new EditTextModule())
-                .streamingSurfaceModule(new StreamingSurfaceModule())
+                .libVLCModule(new LibVLCModule())
                 .socketAddressModule(getSocketAddressModule())
+                .streamingSurfaceModule(new StreamingSurfaceModule())
                 .threadingModule(getThreadingModule())
                 .build();
     }

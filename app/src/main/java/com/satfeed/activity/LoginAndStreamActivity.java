@@ -13,7 +13,7 @@ import com.satfeed.modules.ServiceComponent;
 import org.videolan.libvlc.IVLCVout;
 import org.videolan.libvlc.LibVLC;
 
-public class LoginAndStreamActivity extends Activity implements IVLCVout.Callback, LibVLC.OnNativeCrashListener {
+public class LoginAndStreamActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,31 +27,5 @@ public class LoginAndStreamActivity extends Activity implements IVLCVout.Callbac
         viewDataBinding.setVariable(BR.hailing_email, getResources().getString(R.string.default_email));
         // assign touch handlers
         viewDataBinding.setVariable(BR.touch_handlers, new TouchHandlers());
-    }
-
-
-    @Override
-    public void onNewLayout(IVLCVout vlcVout, int width, int height, int visibleWidth, int visibleHeight, int sarNum, int sarDen) {
-
-    }
-
-    @Override
-    public void onSurfacesCreated(IVLCVout vlcVout) {
-
-    }
-
-    @Override
-    public void onSurfacesDestroyed(IVLCVout vlcVout) {
-
-    }
-
-    @Override
-    public void onHardwareAccelerationError(IVLCVout vlcVout) {
-
-    }
-
-    @Override
-    public void onNativeCrash() {
-
     }
 }

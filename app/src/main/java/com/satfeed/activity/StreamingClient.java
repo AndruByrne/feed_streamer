@@ -6,25 +6,19 @@ package com.satfeed.activity;
 
 import android.app.Activity;
 import android.content.res.Resources;
-import android.test.mock.MockApplication;
 import android.util.Log;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 import com.satfeed.modules.ServiceComponent;
-import com.satfeed.modules.SocketAddressModule;
 
-import java.lang.annotation.Annotation;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.charset.Charset;
-import java.util.Objects;
+import org.videolan.libvlc.IVLCVout;
+import org.videolan.libvlc.Media;
+import org.videolan.libvlc.MediaPlayer;
+//import org.videolan.libvlc.
 
-import javax.inject.Inject;
-
-import dagger.Module;
-import dagger.Provides;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -41,12 +35,19 @@ import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-public class StreamingClient {
+public class StreamingClient{
 
     public Observable<String> streamToSurface(final SurfaceView view, final String hailing_email) {
 
         Log.d(FeedStreamerApplication.TAG, "surface stream starting");
-        Log.d(FeedStreamerApplication.TAG, "surfaceView not null? : "+Boolean.toString(view!=null));
+        Log.d(FeedStreamerApplication.TAG, "surfaceView not null? : " + Boolean.toString(view != null));
+        final ServiceComponent serviceComponent = getServiceComponent(view);
+        final MediaPlayer mediaPlayer = serviceComponent.getMediaPlayer();
+        final IVLCVout vout = serviceComponent.getVOut();
+        vout.setVideoView(view);
+        vout.attachViews();
+//        new Media() a(serviceComponent.getVLC(), 0);
+        final SurfaceHolder holder = view.getHolder();
 
         return Observable.create(new Observable.OnSubscribe<String>() {
             private String challenge_number;
@@ -55,7 +56,7 @@ public class StreamingClient {
             public void call(final Subscriber<? super String> subscriber) {
                 Log.d(FeedStreamerApplication.TAG, "surface stream started");
                 TcpClient
-                        .<ByteBuf, ByteBuf>newClient(getServiceComponent(view).getServerAddress())
+                        .<ByteBuf, ByteBuf>newClient(serviceComponent.getServerAddress())
                         .enableWireLogging(LogLevel.DEBUG)
                         .addChannelHandlerLast("string_decoder", new Func0<ChannelHandler>() {
                             @Override

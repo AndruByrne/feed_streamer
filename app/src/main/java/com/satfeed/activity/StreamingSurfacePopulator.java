@@ -23,10 +23,11 @@ public class StreamingSurfacePopulator {
     @BindingAdapter("login_and_stream")
     public void loginAndStream(final SurfaceView view, final String hailing_email){
 //        getting error from network on UI when I stream to surface from here, which is odd, given
-//        these binding adapters are advertised as off-thread, using an observable.
-
+//        these binding adapters are advertised as off-thread; so now using an observable.
         Log.d(FeedStreamerApplication.TAG, "surface view is not null? : "+Boolean.toString(view!=null));
         Log.d(FeedStreamerApplication.TAG, "streaming client is not null? : "+Boolean.toString(streamingClient!=null));
+        Log.d(FeedStreamerApplication.TAG, "view context is not null? : "+Boolean.toString(view.getContext()!=null));
+
         streamingClient
                 .streamToSurface(view, hailing_email)
                 .subscribeOn(AndroidSchedulers.mainThread())
