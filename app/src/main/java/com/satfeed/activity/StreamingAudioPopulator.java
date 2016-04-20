@@ -31,7 +31,6 @@ public class StreamingAudioPopulator {
     public void loginAndStream(@NonNull final SeekBar view, final String hailing_email){
         streamingClient
                 .streamToTrack(hailing_email, audioTrack)
-                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
         .subscribe(new Action1<String>() {
             @Override
