@@ -14,11 +14,11 @@ import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
+import io.netty.util.ByteProcessor;
 import io.reactivex.netty.channel.Connection;
 import io.reactivex.netty.protocol.tcp.client.TcpClient;
 import io.reactivex.netty.util.StringLineDecoder;
@@ -45,8 +45,19 @@ public class StreamingClient {
 //        serviceComponent = ((FeedStreamerApplication) application).getServiceComponent();
     }
 
+    private static final ByteProcessor LINE_END_FINDER = new ByteProcessor() {
+        public static final char LF = 10;
+
+        @Override
+        public boolean process(byte value) throws Exception {
+            char nextByte = (char) value;
+            return LF != nextByte;
+        }
+    };
 
     public Observable<String> streamToTrack(final String hailing_email, final AudioTrack audioTrack) {
+        // wrapping TcpClient in a mother observable b/c it won't take the assignment to io thread
+        // TCPClient will return NetworkOnMainThreadError!
         return Observable.create(new Observable.OnSubscribe<String>() {
             @Override
             public void call(final Subscriber<? super String> motherSubscriber) {
@@ -61,6 +72,30 @@ public class StreamingClient {
                             }
                         })
                         .createConnectionRequest()
+                                // next iteration...
+//                        .flatMap(new Func1<Connection<ByteBuf, ByteBuf>, Observable<?>>() {
+//                            @Override
+//                            public Observable<?> call(final Connection<ByteBuf, ByteBuf> connection) {
+//                                return Observable.create(new Observable.OnSubscribe<Object>() {
+//                                    @Override
+//                                    public void call(Subscriber<? super Object> subscriber) {
+//                                        int number_of_returns = 0;
+//                                        ByteBuffer out;
+//                                        connection
+//                                                .getInput()
+//                                                .concatMap(new Func1<ByteBuf, Observable<?>>() {
+//                                                    @Override
+//                                                    public Observable<?> call(ByteBuf in) {
+//                                                        while(in.isReadable()){
+//                                                            return null;
+//                                                        }
+//                                                    }
+//                                                });
+//                                    }
+//                                });
+//                            }
+//                        })
+
                         .flatMap(new Func1<Connection<Object, Object>, Observable<?>>() {
                             @Override
                             public Observable<?> call(final Connection<Object, Object> connection) {
@@ -83,9 +118,9 @@ public class StreamingClient {
                                                         break;
                                                     case STREAMING:
                                                         final byte[] bytes = o.toString().getBytes(StandardCharsets.UTF_8);
-                                                        Log.d(FeedStreamerApplication.TAG, "byte length is: "+bytes.length);
+                                                        Log.d(FeedStreamerApplication.TAG, "byte length is: " + bytes.length);
                                                         final int write = audioTrack.write(bytes, 0, bytes.length);
-                                                        Log.d(FeedStreamerApplication.TAG, "write is: "+write);
+                                                        Log.d(FeedStreamerApplication.TAG, "write is: " + write);
                                                         subscriber.onNext(true);
                                                         break;
                                                     default:
