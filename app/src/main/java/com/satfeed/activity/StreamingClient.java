@@ -8,34 +8,34 @@ import android.app.Application;
 import android.content.res.Resources;
 import android.media.AudioTrack;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
 import io.netty.util.ByteProcessor;
 import io.reactivex.netty.channel.Connection;
 import io.reactivex.netty.protocol.tcp.client.TcpClient;
-import io.reactivex.netty.util.StringLineDecoder;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action1;
-import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class StreamingClient {
 
     public enum TCPState {
-        CONNECTED,
+        CONNECTING,
         AUTHENTICATING,
         STREAMING
     }
+
+    // initial capacity for buffer
+    public static final int INITIAL_CAPACITY = 256;
 
     //    private final ServiceComponent serviceComponent;
     private Application application;
@@ -65,76 +65,65 @@ public class StreamingClient {
                         .<ByteBuf, ByteBuf>newClient(new InetSocketAddress(
                                 FeedStreamerApplication.ALIEN_SERVER,
                                 Integer.parseInt(FeedStreamerApplication.STREAMING_PORT)))
-                        .addChannelHandlerLast("string_decoder", new Func0<ChannelHandler>() {
-                            @Override
-                            public ChannelHandler call() {
-                                return new StringLineDecoder();
-                            }
-                        })
                         .createConnectionRequest()
-                                // next iteration...
-//                        .flatMap(new Func1<Connection<ByteBuf, ByteBuf>, Observable<?>>() {
-//                            @Override
-//                            public Observable<?> call(final Connection<ByteBuf, ByteBuf> connection) {
-//                                return Observable.create(new Observable.OnSubscribe<Object>() {
-//                                    @Override
-//                                    public void call(Subscriber<? super Object> subscriber) {
-//                                        int number_of_returns = 0;
-//                                        ByteBuffer out;
-//                                        connection
-//                                                .getInput()
-//                                                .concatMap(new Func1<ByteBuf, Observable<?>>() {
-//                                                    @Override
-//                                                    public Observable<?> call(ByteBuf in) {
-//                                                        while(in.isReadable()){
-//                                                            return null;
-//                                                        }
-//                                                    }
-//                                                });
-//                                    }
-//                                });
-//                            }
-//                        })
-
-                        .flatMap(new Func1<Connection<Object, Object>, Observable<?>>() {
-                            @Override
-                            public Observable<?> call(final Connection<Object, Object> connection) {
-                                final TCPStateCounter tcpStateCounter = new TCPStateCounter();
+                        .flatMap(new Func1<Connection<ByteBuf, ByteBuf>, Observable<?>>() {
+                            @Override // For each connection
+                            public Observable<?> call(final Connection<ByteBuf, ByteBuf> connection) {
                                 return Observable.create(new Observable.OnSubscribe<Object>() {
                                     @Override
-                                    public void call(final Subscriber<? super Object> subscriber) {
-                                        connection.getInput().take(100).doOnNext(new Action1<Object>() {
-                                            @Override
-                                            public void call(Object o) {
-                                                switch (tcpStateCounter.get()) {
-                                                    case CONNECTED:
-                                                        // write out
-                                                        final Observable<byte[]> outBytes = getIdPacketUTF8(o.toString().substring(6), hailing_email);
-                                                        connection.writeBytesAndFlushOnEach(outBytes).subscribe();
-                                                        break;
-                                                    case AUTHENTICATING:
-                                                        final String status = o.toString();
-                                                        motherSubscriber.onNext("Status: " + status);
-                                                        break;
-                                                    case STREAMING:
-                                                        final byte[] bytes = o.toString().getBytes(StandardCharsets.UTF_8);
-                                                        Log.d(FeedStreamerApplication.TAG, "byte length is: " + bytes.length);
-                                                        final int write = audioTrack.write(bytes, 0, bytes.length);
-                                                        Log.d(FeedStreamerApplication.TAG, "write is: " + write);
-                                                        subscriber.onNext(true);
-                                                        break;
-                                                    default:
-                                                        subscriber.onCompleted();
+                                    public void call(Subscriber<? super Object> subscriber) {
+                                        connection
+                                                .getInput()
+                                                .map(new Func1<ByteBuf, String>() {
+                                                    @Override
+                                                    public String call(ByteBuf in) {
+                                                        final TCPStateCounter tcpStateCounter = new TCPStateCounter();
+                                                        int number_of_returns = 0;
+                                                        ByteBuffer out;
+                                                        ByteBuf incompleteBuffer;
+                                                        while (in.isReadable()) {
+                                                            final int startIndex = in.readerIndex();
+                                                            int lastReadIndex = in.forEachByte(LINE_END_FINDER);
+                                                            switch (tcpStateCounter.state) {
+                                                                case STREAMING:
+                                                                    // stream
+                                                                    break;
+                                                                case AUTHENTICATING:
+                                                                    ByteBuf lineBuf = in.readSlice(lastReadIndex - startIndex);
+                                                                    String line = lineBuf.toString(StandardCharsets.UTF_8);
+                                                                    tcpStateCounter.authenticated();
+                                                                    motherSubscriber.onNext("Authenticated: " + line);
+                                                                    break;
+                                                                case CONNECTING:
+                                                                    ByteBuf connectingSlice = in.readSlice(lastReadIndex - startIndex);
+                                                                    String connectingLine = connectingSlice.toString(StandardCharsets.UTF_8);
+                                                                    tcpStateCounter.connected();
+                                                                    final Observable<byte[]> outBytes = getIdPacketUTF8(connectingLine.substring(6), hailing_email);
+                                                                    motherSubscriber.onNext("Connected: " + connectingLine);
+                                                                    connection.writeBytesAndFlushOnEach(outBytes).subscribe();
+                                                                    break;
+                                                                default:
+                                                                    motherSubscriber.onError(new Throwable("Poor StreamingClient state"));
+                                                                    break;
+                                                            }
+                                                        }
+                                                        return "Done";
+                                                    }
+                                                })
+                                                .doOnNext(new Action1<String>() {
+                                                    @Override
+                                                    public void call(String s) {
+                                                        motherSubscriber.onNext("Stream completed");
+                                                        motherSubscriber.onCompleted();
+                                                    }
+                                                }).take(1).subscribe();
 
-                                                }
-                                            }
-                                        }).subscribe();
                                     }
                                 });
                             }
-                        }).take(100).subscribe();
+                        }).take(1).subscribe();
             }
-        }).subscribeOn(Schedulers.newThread());
+        }).subscribeOn(Schedulers.io());
     }
 
     @NonNull
@@ -157,21 +146,15 @@ public class StreamingClient {
         TCPState state;
 
         TCPStateCounter() {
-            this.state = TCPState.CONNECTED;
+            this.state = TCPState.CONNECTING;
         }
 
-        public TCPState get() {
-            switch (state) {
-                case CONNECTED:
-                    state = TCPState.AUTHENTICATING;
-                    return TCPState.CONNECTED;
-                case AUTHENTICATING:
-                    state = TCPState.STREAMING;
-                    return TCPState.AUTHENTICATING;
-                case STREAMING:
-                    return TCPState.STREAMING;
-            }
-            return null;
+        public void connected() {
+            state = TCPState.AUTHENTICATING;
+        }
+
+        public void authenticated() {
+            state = TCPState.STREAMING;
         }
     }
 }
