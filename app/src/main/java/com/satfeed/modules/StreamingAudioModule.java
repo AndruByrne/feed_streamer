@@ -52,9 +52,10 @@ public class StreamingAudioModule {
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build())
                 .setAudioFormat(new AudioFormat.Builder()
-                        .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                         .setSampleRate(Integer.parseInt(sampleRate))
                         .setChannelMask(AudioFormat.CHANNEL_IN_STEREO).build())
+                .setTransferMode(AudioTrack.MODE_STREAM)
                 .setBufferSizeInBytes(5000)
                 .build();
 

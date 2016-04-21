@@ -12,7 +12,6 @@ import com.satfeed.FeedStreamerApplication;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
-import rx.schedulers.Schedulers;
 
 /*
  * Created by Andrew Brin on 4/18/2016.
@@ -35,13 +34,12 @@ public class StreamingAudioPopulator {
         .subscribe(new Action1<String>() {
             @Override
             public void call(String success) {
+                if(audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) audioTrack.play();
                 Toast.makeText(view.getContext(), "Stream: " + success, Toast.LENGTH_SHORT).show();
-                Log.d(FeedStreamerApplication.TAG, "onNext: " + success);
             }
         }, new Action1<Throwable>() {
             @Override
             public void call(Throwable throwable) {
-                Log.e(FeedStreamerApplication.TAG, ": error in observable: " + throwable.getMessage());
                 Toast.makeText(view.getContext(), "Having trouble streaming video right now", Toast.LENGTH_LONG).show();
                 throwable.printStackTrace();
             }
