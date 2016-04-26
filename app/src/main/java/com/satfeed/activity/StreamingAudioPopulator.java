@@ -41,6 +41,7 @@ public class StreamingAudioPopulator {
             @Override
             public void call(Throwable throwable) {
                 Toast.makeText(view.getContext(), "Having trouble streaming video right now", Toast.LENGTH_LONG).show();
+                Log.e(FeedStreamerApplication.TAG, throwable.getMessage());
                 throwable.printStackTrace();
             }
         }, new Action0() {

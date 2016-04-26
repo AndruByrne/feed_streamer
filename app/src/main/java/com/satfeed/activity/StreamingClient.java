@@ -14,7 +14,9 @@ import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ByteProcessor;
@@ -25,7 +27,7 @@ import rx.Subscriber;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-public class StreamingClient {
+final public class StreamingClient {
 
     public enum TCPState {
         CONNECTING,
@@ -33,15 +35,10 @@ public class StreamingClient {
         STREAMING
     }
 
-    // initial capacity for buffer
-    public static final int INITIAL_CAPACITY = 256;
-
-    //    private final ServiceComponent serviceComponent;
     private Application application;
 
     public StreamingClient(Application application) {
         this.application = application;
-//        serviceComponent = ((FeedStreamerApplication) application).getServiceComponent();
     }
 
     private static final ByteProcessor LINE_END_FINDER = new ByteProcessor() {
@@ -72,6 +69,7 @@ public class StreamingClient {
                                     @Override
                                     public void call(Subscriber<? super Object> subscriber) {
                                         final TCPStateCounter tcpStateCounter = new TCPStateCounter();
+                                        final StreamingBufferHandler streamingBufferHandler = new StreamingBufferHandler();
                                         connection
                                                 .getInput()
                                                 .map(new Func1<ByteBuf, String>() {
@@ -79,22 +77,37 @@ public class StreamingClient {
                                                     public String call(ByteBuf in) {
                                                         switch (tcpStateCounter.state) {
                                                             case STREAMING:
-//                                                                    ByteBuf streamingBuf = in.readBytes(in.nioBufferCount());
-//                                                                    String streamingLine = streamingBuf.toString(StandardCharsets.UTF_8);
-//                                                                    final byte[] bytes = line.getBytes(StandardCharsets.UTF_8);
-//                                                                    final int write = audioTrack.write(bytes, 0, bytes.length);
-//                                                                    in.skipBytes(8);
-                                                                Log.d(FeedStreamerApplication.TAG, "SEQ: " + Integer.toString(in.getInt(0)));
-//                                                                Log.d(FeedStreamerApplication.TAG, "CHK: " + Integer.toString(in.getInt(4)));
-                                                                final int purportedLength = in.getInt(8);
-                                                                Log.d(FeedStreamerApplication.TAG, "LEN: " + Integer.toString(purportedLength));
-                                                                ByteBuf streamingSlice = in.readSlice(purportedLength + 12);
-                                                                final int capacity = streamingSlice.capacity();
-                                                                Log.d(FeedStreamerApplication.TAG, "capacity equal to: " + Integer.toString(capacity));
-                                                                final byte[] binner = new byte[purportedLength];
-                                                                streamingSlice.getBytes(12, binner);
-                                                                int write = audioTrack.write(binner, 0, binner.length);
-                                                                Log.d(FeedStreamerApplication.TAG, "write equal to: " + Integer.toString(write));
+                                                                while (in.isReadable()) {
+                                                                    if (streamingBufferHandler.unreadPacketBytes == 0) {
+                                                                        streamingBufferHandler.initializeToLength(in.getInt(8));
+                                                                    }
+                                                                    Log.d(FeedStreamerApplication.TAG, "LEN: " + Integer.toString(streamingBufferHandler.packetLength));
+                                                                    while (streamingBufferHandler.unreadPacketBytes > 0 && in.writerIndex() > 0) {
+                                                                        int copySize = Math.min(in.writerIndex() - in.readerIndex(), streamingBufferHandler.unreadPacketBytes);
+                                                                        if (copySize == 0)
+                                                                            Log.d(FeedStreamerApplication.TAG, "copy size is 0");
+                                                                        final byte[] copyBytes = new byte[copySize];
+                                                                        try {
+                                                                            in.readBytes(copyBytes);
+                                                                            streamingBufferHandler.buffer(copyBytes);
+                                                                            streamingBufferHandler.reportReadBytes(copySize);
+                                                                            Log.d(FeedStreamerApplication.TAG, "unread packet bytes reduced to: "
+                                                                                    + Integer.toString(streamingBufferHandler.unreadPacketBytes));
+                                                                            in.discardReadBytes();
+                                                                        } catch (Throwable e) {
+                                                                            motherSubscriber.onError(e);
+                                                                        }
+                                                                    }
+                                                                    if (streamingBufferHandler.unreadPacketBytes == 0) {
+                                                                        if (streamingBufferHandler.flipAndCheckSum()) {
+                                                                            Log.d(FeedStreamerApplication.TAG, "good checksum");
+                                                                            int write = streamingBufferHandler.writeTo(audioTrack);
+                                                                            Log.d(FeedStreamerApplication.TAG, "write equal to: " + Integer.toString(write));
+                                                                        } else {
+                                                                            Log.d(FeedStreamerApplication.TAG, "bad checksum, wasn't: " + streamingBufferHandler.checksum);
+                                                                        }
+                                                                    }
+                                                                }
                                                                 break;
                                                             case AUTHENTICATING:
                                                                 while (in.isReadable()) {
@@ -167,6 +180,89 @@ public class StreamingClient {
 
         public void authenticated() {
             state = TCPState.STREAMING;
+        }
+    }
+
+    static private class StreamingBufferHandler {
+        int packetLength;
+        private ByteBuffer streamingBuffer;
+        private int unreadPacketBytes;
+        private byte[] binner;
+        private byte[] xorSum;
+        final byte[] sequenceNumber = new byte[4];
+        final byte[] checksum = new byte[4];
+
+        public StreamingBufferHandler() {
+        }
+
+        public void initializeToLength(int length) {
+            this.packetLength = length;
+            this.streamingBuffer = ByteBuffer.allocate(length + 12);
+            this.unreadPacketBytes = length + 12;
+            this.binner = new byte[length];
+        }
+
+        public void buffer(byte[] buffer) {
+            try {
+                streamingBuffer.put(buffer);
+            } catch (Exception e) {
+                Log.e(FeedStreamerApplication.TAG, "could not put into streaming buffer: " + e);
+            }
+        }
+
+        public boolean flipAndCheckSum() {
+            streamingBuffer.flip();
+            streamingBuffer.get(sequenceNumber);
+            streamingBuffer.get(checksum);
+            int throwawayLength = streamingBuffer.getInt();
+            Log.d(FeedStreamerApplication.TAG, "Length By Second Buffer: "+ throwawayLength);
+            try {
+                streamingBuffer.get(binner);
+            } catch (Throwable e) {
+                Log.e(FeedStreamerApplication.TAG, "index out of bounds for ioget: " + e.getMessage());
+            }
+            int remainder = packetLength % 4;
+            xorSum = sequenceNumber.clone();
+            Log.d(FeedStreamerApplication.TAG, "calculating checksum with remainder: " + Integer.toString(remainder));
+            int i;
+            for (i = 0; i < packetLength / 4; i++) {
+                xorSum = xorThis(xorSum, binner, i);
+            }
+            Log.d(FeedStreamerApplication.TAG, "got regulars, sum: " + xorSum);
+            if (remainder != 0) {
+                xorSum = xorRemainder(xorSum, binner, remainder, i);
+                Log.d(FeedStreamerApplication.TAG, "got irregulars, sum: " + xorSum);
+            }
+            return Arrays.equals(xorSum, checksum);
+        }
+
+        public void reportReadBytes(int bytesRead) {
+            unreadPacketBytes -= bytesRead;
+        }
+
+        public int writeTo(AudioTrack audioTrack) {
+            return audioTrack.write(binner, 0, binner.length);
+        }
+
+        private byte[] xorRemainder(byte[] xorSum, byte[] binner, int remainder, int iterationOnBinner) {
+            byte[] response = new byte[4];
+            int r;
+            for (r = 0; r < remainder; r++) {
+                response[r] = ((byte) (xorSum[r] ^ binner[iterationOnBinner * 4 + r]));
+            }
+            for (r = remainder; r < 4; r++) {
+                response[r] = ((byte) (xorSum[r] ^ (byte) (0xab)));
+            }
+            return response;
+        }
+
+        private byte[] xorThis(byte[] xorSum, byte[] binner, int iterationsOnBinner) {
+            byte[] response = new byte[4];
+            int j;
+            for (j = 0; j < 4; j++) {
+                response[j] = ((byte) (xorSum[j] ^ binner[iterationsOnBinner * 4 + j]));
+            }
+            return response;
         }
     }
 }
