@@ -9,4 +9,6 @@
     <string name="idpacket_part1">IAM:</string>
     <string name="idpacket_part2">:</string>
     <string name="idpacket_part3">:at\n</string>
+    <string name="play_button_text">Play Currently Downloaded</string>
+    <string name="resume_download_button_title">Resume Download</string>
 </resources>

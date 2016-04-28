@@ -10,7 +10,7 @@ import android.widget.EditText;
 /*
  * Created by Andrew Brin on 4/17/2016.
  */
-final public class EditTextLooper {
+final public class LoopingEditTextAdapter {
     @BindingAdapter("bind_edit_text")
     public static void addTextChangedListener(EditText view, final int variable){
         final ViewDataBinding binding = DataBindingUtil.findBinding(view);

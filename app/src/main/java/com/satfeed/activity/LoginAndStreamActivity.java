@@ -3,13 +3,19 @@ package com.satfeed.activity;
 import android.app.Activity;
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
+import android.media.AudioTrack;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.satfeed.BR;
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 
-public class LoginAndStreamActivity extends Activity {
+import java.util.TreeMap;
+
+import javax.inject.Inject;
+
+final public class LoginAndStreamActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -13,8 +13,13 @@ import android.media.AudioTrack;
 import android.util.Log;
 
 import com.satfeed.FeedStreamerApplication;
-import com.satfeed.activity.StreamingAudioPopulator;
-import com.satfeed.activity.StreamingClient;
+import com.satfeed.activity.AudioAdapter;
+import com.satfeed.activity.StreamingProgressAdapter;
+import com.satfeed.services.AudioPlayer;
+import com.satfeed.services.StreamingBufferHandler;
+import com.satfeed.services.StreamingClient;
+
+import java.util.TreeMap;
 
 import javax.inject.Singleton;
 
@@ -24,28 +29,26 @@ import dagger.Provides;
 @Module
 public class StreamingAudioModule {
 
-
     @Provides
     @Singleton
-    StreamingAudioPopulator getSurfacePopulator(StreamingClient streamingClient, AudioTrack audioTrack) {
-        return new StreamingAudioPopulator(streamingClient, audioTrack);
+    AudioAdapter getAudioAdapter(AudioPlayer audioPlayer) {
+        return new AudioAdapter(audioPlayer);
     }
 
     @Provides
     @Singleton
-    StreamingClient getStreamingClient(Application application) {
-        return new StreamingClient(application);
+    AudioPlayer getAudioPlayer(AudioTrack audioTrack, TreeMap<Integer, byte[]> packetTreeMap) {
+        return new AudioPlayer(audioTrack, packetTreeMap);
     }
 
     @Provides
     @Singleton
-    AudioTrack getAudioPlayer(Application application) {
+    AudioTrack getAudioTrack(Application application) {
         final AudioManager systemService = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         final String sampleRate = systemService.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
-        final String nominalBufferSize = systemService.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
+//        final String nominalBufferSize = systemService.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
 
-        Log.d(FeedStreamerApplication.TAG, "ideal sample rate: "+sampleRate);
-        Log.d(FeedStreamerApplication.TAG, "nominal buffer size: "+nominalBufferSize);
+        Log.d(FeedStreamerApplication.TAG, "sample rate: " + sampleRate);
         return new AudioTrack.Builder()
                 .setAudioAttributes(new AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -53,11 +56,10 @@ public class StreamingAudioModule {
                         .build())
                 .setAudioFormat(new AudioFormat.Builder()
                         .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                        .setSampleRate(Integer.parseInt(sampleRate))
-                        .setChannelMask(AudioFormat.CHANNEL_IN_STEREO).build())
+                        .setSampleRate(Integer.parseInt(sampleRate)/6)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .setBufferSizeInBytes(5000)
+                .setBufferSizeInBytes(4000)
                 .build();
-
     }
 }

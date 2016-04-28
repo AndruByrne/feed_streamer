@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <import type="java.lang.Boolean"/>
+        <variable
+            name="touch_handlers"
+            type="com.satfeed.activity.TouchHandlers" />
+    </data>
+
+    <ProgressBar
+        android:id="@+id/audio_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:background="#5f5365"
+        android:onClick="@{touch_handlers.onProgressBarClicked}"
+        app:play_audio="@{Boolean.valueOf(true)}"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp" />
+
+</layout>

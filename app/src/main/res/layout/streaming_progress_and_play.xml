@@ -9,11 +9,15 @@
             name="hailing_email"
             type="String"/>
     </data>
-    <SeekBar
-        android:id="@+id/seeking_bar"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/play_button"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:text="@string/play_button_text"
+        android:background="@color/dark_green"
         app:login_and_stream="@{hailing_email}"
-        />
+        android:onClick="@{touch_handlers.onPlayClicked}"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp" />
+
 </layout>

@@ -14,11 +14,8 @@ import dagger.Component;
 @Component(modules = {
         AppModule.class,
         EditTextModule.class,
-        SocketAddressModule.class,
+        PacketMapModule.class,
         StreamingAudioModule.class,
+        SocketDownloadModule.class,
         ThreadingModule.class})
-public interface ServiceComponent extends DataBindingComponent {
-
-//    InetSocketAddress getServerAddress();
-
-}
+public interface ServiceComponent extends DataBindingComponent { }

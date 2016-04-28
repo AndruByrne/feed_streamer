@@ -4,7 +4,7 @@ package com.satfeed.modules;
  * Created by Andrew Brin on 4/18/2016.
  */
 
-import com.satfeed.activity.EditTextLooper;
+import com.satfeed.activity.LoopingEditTextAdapter;
 
 import dagger.Module;
 import dagger.Provides;
@@ -13,7 +13,7 @@ import dagger.Provides;
 public class EditTextModule {
 
     @Provides
-    EditTextLooper getEditTextLooper(){
-        return new EditTextLooper();
+    LoopingEditTextAdapter getEditTextLooper(){
+        return new LoopingEditTextAdapter();
     }
 }
