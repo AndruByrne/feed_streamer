@@ -18,7 +18,7 @@ public class StreamingBufferHandler {
         int packetLength;
         private ByteBuffer streamingBuffer;
         private ByteBuffer header = ByteBuffer.allocate(12);
-        private byte[] binner;
+        private byte[] body;
         private byte[] xorSum;
         final byte[] sequenceNumber = new byte[4];
         final byte[] checksum = new byte[4];
@@ -53,7 +53,7 @@ public class StreamingBufferHandler {
             if (packetLength > 8000)
                 throw new RuntimeException("lost the stream; length has exceeded bounds of rationality: " + Integer.toString(packetLength) + " bytes requested");
             this.streamingBuffer = ByteBuffer.allocate(packetLength);
-            this.binner = new byte[packetLength];
+            this.body = new byte[packetLength];
             isInitialized = true;
         }
 
@@ -65,29 +65,29 @@ public class StreamingBufferHandler {
             }
         }
 
-        public byte[] checkSumAndGet() {
+        public byte[] checkSumAndGetBody() {
             if (streamingBuffer.hasRemaining()) {
                 Log.e(FeedStreamerApplication.TAG, "attempted checksum on unfull Buffer");
                 return null;
             }
             streamingBuffer.flip();
             try {
-                streamingBuffer.get(binner); //  attempting to get buffer to binner
+                streamingBuffer.get(body); //  attempting to get buffer to body
             } catch (Throwable e) {
                 Log.e(FeedStreamerApplication.TAG, "index out of bounds for ioget: " + e.getMessage());
             }
-            isInitialized = false;
-            int remainder = packetLength % 4;
-            xorSum = sequenceNumber.clone();
+            isInitialized = false; //  reset initialized to false
+            int remainder = packetLength % 4; //  prepare to fill in missing bytes in checksum
+            xorSum = sequenceNumber.clone(); // sequence bytes first in xor
             int i;
             for (i = 0; i < packetLength / 4; i++) {
-                xorSum = xorThis(xorSum, binner, i);
+                xorSum = xorThis(xorSum, body, i); // xor for all full quartets
             }
             if (remainder != 0) {
-                xorSum = xorRemainder(xorSum, binner, remainder, i);
+                xorSum = xorRemainder(xorSum, body, remainder, i); //  xor for odd quartets
             }
-            if (Arrays.equals(xorSum, checksum)) {
-                return binner;
+            if (Arrays.equals(xorSum, checksum)) { //  if good checksum
+                return body; //  return packet of bytes
             } else return null;
         }
 

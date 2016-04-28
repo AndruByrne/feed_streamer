@@ -107,13 +107,13 @@ final public class StreamingClient {
                                                                             }
                                                                         }
                                                                         if (streamingBufferHandler.getPacketBufBytesRemaining() == 0) { // perform checksum and report to UI thread
-                                                                            byte[] packet = streamingBufferHandler.checkSumAndGet();
-                                                                            if (packet != null) {
+                                                                            byte[] body = streamingBufferHandler.checkSumAndGetBody(); //  if good checksum, body will be audio data
+                                                                            if (body != null) { //  if bad checksum, body will be null
                                                                                 int sequenceNumber = streamingBufferHandler.getSequenceNumber();
-                                                                                if (!packetTreeMap.containsKey(sequenceNumber)) {
-                                                                                    packetTreeMap.put(sequenceNumber, packet); //  put into ordered map for later retrieval.
+                                                                                if (!packetTreeMap.containsKey(sequenceNumber)) { //  check for duplicates (may want to remove)
+                                                                                    packetTreeMap.put(sequenceNumber, body); //  put into ordered map for later retrieval.
                                                                                     int treeMapSize = packetTreeMap.size();
-                                                                                    if (treeMapSize % 48 == 0) {
+                                                                                    if (treeMapSize % 24 == 0) {
                                                                                         motherSubscriber.onNext(treeMapSize);
                                                                                     }
                                                                                 }
@@ -129,7 +129,7 @@ final public class StreamingClient {
                                                                     ByteBuf slice = in.readSlice(lastReadIndex - startIndex); //  read line
                                                                     String line = slice.toString(StandardCharsets.UTF_8);
                                                                     Log.i(FeedStreamerApplication.TAG, "authenticating recieved: " + line);
-                                                                    socketState.authenticated(); //  update tcp state
+                                                                    socketState.authenticated(); //  update socket state
                                                                     in.skipBytes(1); //  skip carraige return
                                                                 }
                                                                 break;
@@ -139,7 +139,7 @@ final public class StreamingClient {
                                                                     int lastReadIndex = in.forEachByte(LINE_END_FINDER); //  find end of line
                                                                     ByteBuf slice = in.readSlice(lastReadIndex - startIndex); //  read line
                                                                     String line = slice.toString(StandardCharsets.UTF_8);
-                                                                    socketState.connected(); //  update tcp state
+                                                                    socketState.connected(); //  update socket state
                                                                     Log.i(FeedStreamerApplication.TAG, "connecting recieved: " + line);
                                                                     final Observable<byte[]> outBytes = getIdPacketUTF8(line.substring(6), hailing_email); //  get return to challenge
                                                                     connection.writeBytesAndFlushOnEach(outBytes).take(1).subscribe(); //  write return bytes
