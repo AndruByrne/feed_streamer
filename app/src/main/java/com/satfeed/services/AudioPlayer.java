@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
@@ -33,20 +34,27 @@ final public class AudioPlayer {
                 .create(new Observable.OnSubscribe<Integer>() {
                     @Override
                     public void call(Subscriber<? super Integer> subscriber) {
-                        audioTrack.play();
+                        audioTrack.play(); //  Streaming, so we must play first
                         int i = 0;
                         for (byte[] packet : packetTreeMap.values()) {
-                            audioTrack.write(packet, 0, packet.length);
-                            subscriber.onNext(i++);
+                            audioTrack.write(packet, 0, packet.length); //  write to audioTrack
+                            subscriber.onNext(i++); //  send count downstream
                         }
                         subscriber.onCompleted();
                     }
                 })
-                .sample(100, TimeUnit.MILLISECONDS)
+                .sample(100, TimeUnit.MILLISECONDS) //  only sample every 100 ms
                 .map(new Func1<Integer, Integer>() {
                     @Override
                     public Integer call(Integer i) {
-                        return (int) ((float) i / numberOfPackets) * 100;
+                        float progress = (float) i / numberOfPackets; //  get normalized progress
+                        return (int) (progress * 100); //  change progress from 0-1 to 0-100
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        audioTrack.stop(); //  Stop playing on unsubscribe
                     }
                 })
                 .subscribeOn(Schedulers.newThread());

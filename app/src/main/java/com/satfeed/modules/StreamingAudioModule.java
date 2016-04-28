@@ -59,7 +59,7 @@ public class StreamingAudioModule {
                         .setSampleRate(Integer.parseInt(sampleRate)/6)
                         .setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .setBufferSizeInBytes(4000)
+                .setBufferSizeInBytes(200)
                 .build();
     }
 }

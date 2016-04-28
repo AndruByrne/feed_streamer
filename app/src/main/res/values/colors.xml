@@ -5,6 +5,8 @@
     <color name="trans_bright_green">#8811DC11</color>
     <color name="pure_white">#FFFFFFFF</color>
     <color name="stop_red">#c70a16</color>
+    <color name="trans_red">#c4d7252e</color>
+
     <color name="super_light_gray">#00CECECE</color>
     <color name="purpley_gray">#FF837D84</color>
 

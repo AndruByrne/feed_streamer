@@ -22,7 +22,7 @@ final public class LoopingEditTextAdapter {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 final String string = s.toString();
-                binding.setVariable(variable, string);
+                binding.setVariable(variable, string); //  set variable to string
                 binding.executePendingBindings();
             }
 

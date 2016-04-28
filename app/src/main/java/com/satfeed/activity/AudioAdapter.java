@@ -36,7 +36,7 @@ final public class AudioAdapter {
                         new Action1<Integer>() {
                             @Override
                             public void call(Integer integer) {
-                                view.setProgress(integer);
+                                view.setProgress(integer); //  move progres bar towards 100
                             }
                         },
                         new Action1<Throwable>() {
