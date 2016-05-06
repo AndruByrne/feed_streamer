@@ -9,50 +9,55 @@ import android.widget.Toast;
 import com.satfeed.FeedStreamerApplication;
 import com.satfeed.R;
 import com.satfeed.databinding.AudioProgressBinding;
+import com.satfeed.databinding.DownloadProgressAndPlayBinding;
 import com.satfeed.databinding.LoginAndStreamActivityBinding;
-import com.satfeed.databinding.StreamingProgressAndPlayBinding;
-import com.satfeed.modules.ServiceComponent;
+import com.satfeed.modules.DownloadAndPlayAdapterComponent;
+import com.satfeed.modules.UserComponent;
+
+import javax.inject.Inject;
+
+import dagger.Lazy;
 
 /*
  * Created by Andrew Brin on 4/6/2016.
  */
 final public class TouchHandlers {
 
+    private UserComponent userComponent;
+    private DownloadAndPlayAdapterComponent downloadAndPlayAdapterComponent;
+
     public TouchHandlers() {
     }
 
-    static public void onGoClickedWithEmail(View view) {
+    public void onGoClickedWithEmail(View view) {
+        final FeedStreamerApplication application = FeedStreamerApplication.getInstance();
         final LoginAndStreamActivityBinding dataBinding = DataBindingUtil.findBinding(view);
-        final StreamingProgressAndPlayBinding streamingBinding = StreamingProgressAndPlayBinding.inflate(
-                ((Activity) view.getContext()).getLayoutInflater(), //  inflate streaming_progress_and_play.xml
-                dataBinding.audioFrame,
-                false);
-        streamingBinding.setTouchHandlers(dataBinding.getTouchHandlers()); //  transfer handlers
-        streamingBinding.setHailingEmail(dataBinding.getHailingEmail());  //  transfer hailing email
+        userComponent = application.createUserComponent(dataBinding.getHailingEmail()); //  create modules dependent on user email
+        downloadAndPlayAdapterComponent = application.createDownloadAndPlayAdapterComponent(userComponent);
+        final DownloadProgressAndPlayBinding downloadProgressAndPlayBinding = DownloadProgressAndPlayBinding.inflate(
+                ((Activity) view.getContext()).getLayoutInflater(), //  inflate download_progress_and_play.xml
+                downloadAndPlayAdapterComponent);
+        downloadProgressAndPlayBinding.setTouchHandlers(this); //  transfer touch handlers
         dataBinding.audioFrame.removeAllViews();
-        dataBinding.audioFrame.addView(streamingBinding.playButton); //  add play_button view
+        dataBinding.audioFrame.addView(downloadProgressAndPlayBinding.playButton); //  add play_button view
     }
 
     static public void onGoClickedNoEmail(View view) {
         Toast.makeText(view.getContext(), R.string.no_email_toast, Toast.LENGTH_SHORT).show();
     }
 
-    static public void onPlayClicked(View view) {
-        Activity context = ((Activity) view.getContext());
-        ServiceComponent serviceComponent = ((FeedStreamerApplication) context.getApplication()).getServiceComponent();
-        serviceComponent.getStreamingProgressAdapter().closeStream(); //  stop downloading
+    public void onPlayClicked(View view) {
+//        downloadAndPlayAdapterComponent.getDownloadProgressAdapter().closeStream();
         final LoginAndStreamActivityBinding dataBinding = DataBindingUtil.findBinding((View) view.getParent());
         final AudioProgressBinding audioProgressBinding = AudioProgressBinding.inflate( //  inflate audio_progress.xml
-                context.getLayoutInflater(),
-                dataBinding.audioFrame,
-                false);
-        audioProgressBinding.setTouchHandlers(dataBinding.getTouchHandlers()); //  transfer handlers
+                ((Activity) view.getContext()).getLayoutInflater(),
+                downloadAndPlayAdapterComponent);
+        audioProgressBinding.setTouchHandlers(this); //  transfer handlers
         dataBinding.audioFrame.removeAllViews();
         dataBinding.audioFrame.addView(audioProgressBinding.audioProgress); //  add audio_progress view
     }
 
-    static public void onProgressBarClicked(View view) {
-        ServiceComponent serviceComponent = ((FeedStreamerApplication)((Activity)view.getContext()).getApplication()).getServiceComponent();
-        serviceComponent.getAudioAdapter().playAudio((ProgressBar)view, true); //  just replay audio
+    public void onProgressBarClicked(View view) {
+        downloadAndPlayAdapterComponent.getAudioAdapter().playAudio(downloadAndPlayAdapterComponent, (ProgressBar) view, true); //  just replay audio
     }
 }

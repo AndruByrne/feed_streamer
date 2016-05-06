@@ -1,14 +1,18 @@
 package com.satfeed.activity;
 
 import android.databinding.BindingAdapter;
+import android.databinding.DataBindingComponent;
 import android.util.Log;
-import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.satfeed.FeedStreamerApplication;
+import com.satfeed.modules.DownloadAndPlayAdapterComponent;
 import com.satfeed.services.AudioPlayer;
 
+import javax.inject.Inject;
+
+import rx.Observable;
+import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
@@ -19,43 +23,35 @@ import rx.functions.Action1;
  */
 final public class AudioAdapter {
 
-    private AudioPlayer audioPlayer;
-    private Subscription subscription;
-
-    public AudioAdapter(AudioPlayer audioPlayer) {
-        this.audioPlayer = audioPlayer;
+    public AudioAdapter() {
     }
 
     @BindingAdapter("play_audio")
-    public void playAudio(final ProgressBar view, Boolean shouldPlay) {
-        unsubscribe();
-        subscription = audioPlayer
-                .playAudio()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        new Action1<Integer>() {
-                            @Override
-                            public void call(Integer integer) {
-                                view.setProgress(integer); //  move progres bar towards 100
-                            }
-                        },
-                        new Action1<Throwable>() {
-                            @Override
-                            public void call(Throwable throwable) {
-                                Log.e(FeedStreamerApplication.TAG, "Error in audio playback: "+throwable.getMessage());
-                                unsubscribe();
-                            }
-                        },
-                        new Action0() {
-                            @Override
-                            public void call() {
-                                unsubscribe();
-                            }
-                        });
+    public static void playAudio(DownloadAndPlayAdapterComponent adapterComponent, final ProgressBar view, Boolean shouldPlay) {
+        Observable<Integer> audioObservable = adapterComponent
+                .getAudioPlayer().playAudio();
+        Subscriber<Integer> audioSubscriber = new Subscriber<Integer>() {
+
+            @Override
+            public void onNext(Integer integer) {
+                view.setProgress(integer); //  move progres bar towards 100
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(FeedStreamerApplication.TAG, "Error in audio playback: " + e.getMessage());
+
+            }
+
+            @Override
+            public void onCompleted() {
+
+            }
+
+
+        };
+        adapterComponent.getSubscriptionAccountant().subscribeAudio(audioObservable, audioSubscriber);
     }
 
-    public void unsubscribe() {
-        if (subscription != null && !subscription.isUnsubscribed())
-            subscription.unsubscribe();
-    }
 }

@@ -1,16 +1,12 @@
 package com.satfeed.services;
 
 import android.media.AudioTrack;
-import android.util.Log;
-
-import com.satfeed.FeedStreamerApplication;
 
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;

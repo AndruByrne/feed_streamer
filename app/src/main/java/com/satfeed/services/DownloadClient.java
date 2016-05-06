@@ -26,7 +26,7 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-final public class StreamingClient {
+final public class DownloadClient {
 
     public enum SocketStates {
         CONNECTING,
@@ -36,12 +36,18 @@ final public class StreamingClient {
 
     final private Application application;
     final private TreeMap<Integer, byte[]> packetTreeMap;
-    private StreamingBufferHandler streamingBufferHandler;
+    final private DownloadBufferHandler downloadBufferHandler;
+    final private String hailingEmail;
 
-    public StreamingClient(Application application, TreeMap<Integer, byte[]> packetTreeMap, StreamingBufferHandler streamingBufferHandler) {
+    public DownloadClient(
+            Application application,
+            TreeMap<Integer, byte[]> packetTreeMap,
+            DownloadBufferHandler downloadBufferHandler,
+            String hailingEmail) {
         this.application = application;
         this.packetTreeMap = packetTreeMap;
-        this.streamingBufferHandler = streamingBufferHandler;
+        this.downloadBufferHandler = downloadBufferHandler;
+        this.hailingEmail = hailingEmail;
     }
 
     private static final ByteProcessor LINE_END_FINDER = new ByteProcessor() {
@@ -54,7 +60,7 @@ final public class StreamingClient {
         }
     };
 
-    public Observable<Integer> streamToTree(final String hailing_email) {
+    public Observable<Integer> streamToTree() {
         //  wrapping TcpClient in a mother observable b/c it won't take the assignment to io thread
         //  TCPClient will return NetworkOnMainThreadError!
         return Observable.create(new Observable.OnSubscribe<Integer>() {
@@ -82,34 +88,34 @@ final public class StreamingClient {
                                                         switch (socketState.state) {
                                                             case STREAMING:
                                                                 while (in.isReadable()) {
-                                                                    if (!streamingBufferHandler.isInitialized()) { // we do not have a full header
+                                                                    if (!downloadBufferHandler.isInitialized()) { // we do not have a full header
                                                                         final byte[] copyHeaderBytes = new byte[Math.min(
-                                                                                streamingBufferHandler.getHeaderBytesRemaining(),
+                                                                                downloadBufferHandler.getHeaderBytesRemaining(),
                                                                                 in.readableBytes())];
                                                                         try { //  copy the bytes from in to header
                                                                             in.readBytes(copyHeaderBytes);
-                                                                            streamingBufferHandler.bufferHeader(copyHeaderBytes);
+                                                                            downloadBufferHandler.bufferHeader(copyHeaderBytes);
                                                                             in.discardReadBytes();
                                                                         } catch (Throwable e) {
                                                                             throw e;
                                                                         }
                                                                     }
-                                                                    if (streamingBufferHandler.isInitialized()) { // we did initialize off a full header
-                                                                        while (streamingBufferHandler.getPacketBufBytesRemaining() > 0 && in.isReadable()) { //  copy bytes from inbuffer to streaming buffer
-                                                                            int copySize = Math.min(in.readableBytes(), streamingBufferHandler.getPacketBufBytesRemaining());
+                                                                    if (downloadBufferHandler.isInitialized()) { // we did initialize off a full header
+                                                                        while (downloadBufferHandler.getPacketBufBytesRemaining() > 0 && in.isReadable()) { //  copy bytes from inbuffer to streaming buffer
+                                                                            int copySize = Math.min(in.readableBytes(), downloadBufferHandler.getPacketBufBytesRemaining());
                                                                             final byte[] copyBytes = new byte[copySize];
                                                                             try { //  copy the bytes from in to streamingBuffer
                                                                                 in.readBytes(copyBytes);
-                                                                                streamingBufferHandler.buffer(copyBytes);
+                                                                                downloadBufferHandler.buffer(copyBytes);
                                                                                 in.discardReadBytes();
                                                                             } catch (Throwable e) {
                                                                                 throw e;
                                                                             }
                                                                         }
-                                                                        if (streamingBufferHandler.getPacketBufBytesRemaining() == 0) { // perform checksum and report to UI thread
-                                                                            byte[] body = streamingBufferHandler.checkSumAndGetBody(); //  if good checksum, body will be audio data
+                                                                        if (downloadBufferHandler.getPacketBufBytesRemaining() == 0) { // perform checksum and report to UI thread
+                                                                            byte[] body = downloadBufferHandler.checkSumAndGetBody(); //  if good checksum, body will be audio data
                                                                             if (body != null) { //  if bad checksum, body will be null
-                                                                                int sequenceNumber = streamingBufferHandler.getSequenceNumber();
+                                                                                int sequenceNumber = downloadBufferHandler.getSequenceNumber();
                                                                                 if (!packetTreeMap.containsKey(sequenceNumber)) { //  check for duplicates (may want to remove)
                                                                                     packetTreeMap.put(sequenceNumber, body); //  put into ordered map for later retrieval.
                                                                                     int treeMapSize = packetTreeMap.size();
@@ -141,13 +147,13 @@ final public class StreamingClient {
                                                                     String line = slice.toString(StandardCharsets.UTF_8);
                                                                     socketState.connected(); //  update socket state
                                                                     Log.i(FeedStreamerApplication.TAG, "connecting recieved: " + line);
-                                                                    final Observable<byte[]> outBytes = getIdPacketUTF8(line.substring(6), hailing_email); //  get return to challenge
+                                                                    final Observable<byte[]> outBytes = getIdPacketUTF8(line.substring(6), hailingEmail); //  get return to challenge
                                                                     connection.writeBytesAndFlushOnEach(outBytes).take(1).subscribe(); //  write return bytes
                                                                     in.skipBytes(1); //  skip carraige return
                                                                 }
                                                                 break;
                                                             default:
-                                                                motherSubscriber.onError(new Throwable("Poor StreamingClient state"));
+                                                                motherSubscriber.onError(new Throwable("Poor DownloadClient state"));
                                                                 break;
                                                         }
                                                         return "Done";

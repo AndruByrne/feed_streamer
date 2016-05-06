@@ -2,12 +2,10 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <data>
+        <import type="java.lang.Integer"/>
         <variable
             name="touch_handlers"
             type="com.satfeed.activity.TouchHandlers"/>
-        <variable
-            name="hailing_email"
-            type="String"/>
     </data>
     <Button
         android:id="@+id/play_button"
@@ -15,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="@string/play_button_text"
         android:background="@color/dark_green"
-        app:login_and_stream="@{hailing_email}"
+        app:login_and_download="@{Integer.valueOf(0)}"
         android:onClick="@{touch_handlers.onPlayClicked}"
         android:paddingLeft="15dp"
         android:paddingRight="15dp" />

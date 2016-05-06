@@ -6,7 +6,6 @@ package com.satfeed.modules;
 
 import java.util.TreeMap;
 
-import javax.inject.Named;
 import javax.inject.Singleton;
 
 import dagger.Module;
@@ -16,7 +15,7 @@ import dagger.Provides;
 public class PacketMapModule {
 
     @Provides
-    @Singleton
+    @UserScope
     TreeMap<Integer,byte[]> getPacketTreeMap(){
         return new TreeMap<>();
     }

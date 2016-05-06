@@ -10,7 +10,7 @@ import java.util.Arrays;
 /*
  * Created by Andrew Brin on 4/27/2016.
  */
-public class StreamingBufferHandler {
+public class DownloadBufferHandler {
         /*
         Helper class for the Streaming Client; wraps the buffer that is persisted through connection mishaps
         Maintains a boolean state accessible by isInitialized()
@@ -24,7 +24,7 @@ public class StreamingBufferHandler {
         final byte[] checksum = new byte[4];
         private boolean isInitialized;
 
-        public StreamingBufferHandler() {
+        public DownloadBufferHandler() {
             isInitialized = false;
         }
 
